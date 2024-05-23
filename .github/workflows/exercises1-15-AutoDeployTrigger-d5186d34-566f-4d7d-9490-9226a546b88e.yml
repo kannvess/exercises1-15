@@ -1,0 +1,47 @@
+name: Trigger auto deployment for exercises1-15
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - '**'
+    - '.github/workflows/exercises1-15-AutoDeployTrigger-d5186d34-566f-4d7d-9490-9226a546b88e.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+      contents: read #Required when GH token is used to authenticate with private repo
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.EXERCISES115_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.EXERCISES115_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.EXERCISES115_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }} 
+          registryUrl: docker.io
+          registryUsername: ${{ secrets.EXERCISES115_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.EXERCISES115_REGISTRY_PASSWORD }}
+          containerAppName: exercises1-15
+          resourceGroup: DefaultResourceGroup-SEA
+          imageToBuild: kannvess/exercises1-15:${{ github.sha }}
+          _buildArgumentsKey_: |
+            _buildArgumentsValues_
+
+
